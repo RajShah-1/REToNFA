@@ -154,5 +154,7 @@ int main() {
   argsNFA.top()->printNFA();
   DFA dfa(*argsNFA.top());
   dfa.printDFA();
+  dfa.minimizeDFA();
+  dfa.printMinDFA();
   return 0;
 }

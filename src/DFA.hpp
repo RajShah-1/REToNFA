@@ -15,6 +15,7 @@ class DFA {
   DFA(NFA& nfa);
   void minimizeDFA();
   void printDFA();
+  void printMinDFA();
   int getNumStates();
   unordered_map<string, int> getAlphabet();
   vector<vector<int>> getTransistionFn();
@@ -35,6 +36,9 @@ class DFA {
   int startState;
   // F
   set<int> finalStates;
+
+  // for minimization
+  unordered_map<int, int> equivalentState;
 
   string setToString(set<int>& S);
 };
