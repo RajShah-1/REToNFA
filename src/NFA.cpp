@@ -29,8 +29,67 @@ NFA::NFA(string symbol, unordered_map<string, int>& alphabet)
 }
 
 void NFA::convertEpsNFAToNFA() {
+  int nAlphabet = alphabet.size();
   unordered_map<int, set<int>> eps_closure;
-  
+  for (int state = 0; state < numStates; ++state) {
+    set<int> stateClosure;
+    queue<int> statesToBeProcessed;
+    statesToBeProcessed.push(state);
+    stateClosure.insert(state);
+
+    while (!statesToBeProcessed.empty()) {
+      int currState = statesToBeProcessed.front();
+      statesToBeProcessed.pop();
+      for (int q : transistionFn[currState][nAlphabet]) {
+        if (stateClosure.find(q) == stateClosure.end()) {
+          statesToBeProcessed.push(q);
+          stateClosure.insert(q);
+        }
+      }
+    }
+    eps_closure.insert(make_pair(state, stateClosure));
+  }
+  // delta-NFA(q, a) = E-closure(delta-E-NFA(E-closure(q), a)) for a != E
+  // delta-NFA(q, E) = phi
+  for (int tfRow = 0; tfRow < transistionFn.size(); ++tfRow) {
+    set<int> qiClosure = eps_closure[tfRow];
+    for (int tr = 0; tr < transistionFn[tfRow].size(); ++tr) {
+      if (tr == nAlphabet) {
+        transistionFn[tfRow][tr].clear();
+        continue;
+      }
+      for (int qj : qiClosure) {
+        for (int qk : transistionFn[qj][tr]) {
+          transistionFn[tfRow][tr].insert(qk);
+        }
+      }
+      transistionFn[tfRow][tr] =
+          closureOfSet(transistionFn[tfRow][tr], eps_closure);
+    }
+  }
+  set<int> newFinalState;
+  // new F (F of NFA) = all the states that has at least one state of F 
+  // (F of E-NFA) in their E-closure
+  for (auto qi : eps_closure) {
+    for (int qF : finalStates) {
+      if (qi.second.find(qF) != qi.second.end()) {
+        newFinalState.insert(qi.first);
+        break;
+      }
+    }
+  }
+  finalStates = newFinalState;
+}
+
+set<int> NFA::closureOfSet(set<int>& states,
+                           unordered_map<int, set<int>>& eps_closure) {
+  set<int> union_closure;
+  for (int qi : states) {
+    for (int qj : eps_closure[qi]) {
+      union_closure.insert(qj);
+    }
+  }
+  return union_closure;
 }
 
 void NFA::applyKleeneStar() {
@@ -44,7 +103,7 @@ void NFA::applyKleeneStar() {
   transistionFn[qk][nAlphabet].insert(startState);
   // add eps transition from all the final states to qk
   for (int qF : finalStates) {
-    transistionFn[qF][nAlphabet].insert(qk);
+    transistionFn[qF][nAlphabet].insert(startState);
   }
   // qk is new start state
   startState = qk;
@@ -118,7 +177,7 @@ void NFA::applyConcatenationWith(NFA& nfa2) {
 }
 
 void NFA::printNFA() {
-  cout << "NFA: \n";
+  cout << "===\n";
   cout << "Start State: q" << startState << "\n";
   cout << "Final States: ";
   for (int qF : finalStates) {

@@ -146,7 +146,13 @@ int main() {
     throw INVALID_REGEX_EXCEPTION;
   }
   cout << "Post-fix: " << args.top() << endl;
-  cout << "EQ NFA: \n";
+  cout << "Eps-NFA: \n";
   argsNFA.top()->printNFA();
+  
+  argsNFA.top()->convertEpsNFAToNFA();
+  cout << "NFA: \n";
+  argsNFA.top()->printNFA();
+  DFA dfa(*argsNFA.top());
+  dfa.printDFA();
   return 0;
 }
