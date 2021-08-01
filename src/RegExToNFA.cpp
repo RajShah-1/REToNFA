@@ -146,15 +146,18 @@ int main() {
     throw INVALID_REGEX_EXCEPTION;
   }
   cout << "Post-fix: " << args.top() << endl;
-  cout << "Eps-NFA: \n";
+  cout << "Epsilon-NFA: \n";
   argsNFA.top()->printNFA();
   
   argsNFA.top()->convertEpsNFAToNFA();
-  cout << "NFA: \n";
+  cout << "===\nNFA: \n";
   argsNFA.top()->printNFA();
   DFA dfa(*argsNFA.top());
+  cout << "DFA: \n";
   dfa.printDFA();
   dfa.minimizeDFA();
+  cout << "MinimizedDFA: \n";
   dfa.printMinDFA();
+  cout << endl;
   return 0;
 }

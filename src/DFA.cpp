@@ -23,10 +23,11 @@ DFA::DFA(NFA& nfa) : alphabet(nfa.getAlphabet()) {
   unordered_map<string, set<int>> strToSubset;
 
   // phi -> id = -1
-  subsetToId.insert(make_pair("", -1));
+  transistionFn = vector<vector<int>>();
+  subsetToId.insert(make_pair("", numStates++));
+  transistionFn.push_back(vector<int>(nAlphabet, 0));
   strToSubset.insert(make_pair("", set<int>()));
 
-  transistionFn = vector<vector<int>>();
   vector<vector<set<int>>> nfaTrFn = nfa.getTransistionFn();
   set<int> nfaStartState = {nfa.getStartState()};
   queue<set<int>> pendingStatesQueue;
@@ -38,7 +39,7 @@ DFA::DFA(NFA& nfa) : alphabet(nfa.getAlphabet()) {
     set<int> currSet = pendingStatesQueue.front();
     pendingStatesQueue.pop();
 
-    vector<int> transistionFnRow(nAlphabet, -1);
+    vector<int> transistionFnRow(nAlphabet, 0);
     for (int sym = 0; sym < nAlphabet; ++sym) {
       set<int> tranSubset;
       for (int qi : currSet) {
@@ -57,6 +58,7 @@ DFA::DFA(NFA& nfa) : alphabet(nfa.getAlphabet()) {
     }
     transistionFn.push_back(transistionFnRow);
   }
+  assert(numStates == transistionFn.size());
 
   startState = subsetToId[setToString(nfaStartState)];
   finalStates = set<int>();
@@ -86,6 +88,7 @@ void DFA::minimizeDFA() {
 
   // Create dependency lists
   // dependencyLists[qr][qs] -> dependency-list for state-pair (qr, qs)
+  // last state corresponds to phi (or -1)
   vector<vector<vector<pair<int, int>>>> dependencyLists(
       numStates, vector<vector<pair<int, int>>>(numStates));
   // populate values in the dependency-lists
@@ -94,7 +97,6 @@ void DFA::minimizeDFA() {
       for (int sym = 0; sym < nAlphabet; ++sym) {
         int tmp1 = transistionFn[qi][sym];
         int tmp2 = transistionFn[qj][sym];
-        if (tmp1 == -1 || tmp2 == -1) continue;
         if (tmp1 == tmp2) continue;
         int qr = min(tmp1, tmp2);
         int qs = max(tmp1, tmp2);
@@ -175,8 +177,6 @@ void DFA::minimizeDFA() {
       }
     }
   }
-
-  // check if some state(s) are equivalent to the empty state
   for (int qi = 0; qi < numStates; ++qi) {
     bool isPhi = true;
     for (int sym = 0; sym < nAlphabet; ++sym) {
